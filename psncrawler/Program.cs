@@ -18,7 +18,7 @@ namespace psncrawler
             const int increment = 3000;
             const string environment = "np";
 
-            for (int i = 7000; i < 100000; i += increment)
+            for (int i = 0; i < 100000; i += increment)
             {
                 await ExploreMultithread(i, i + increment, environment);
             }
@@ -53,6 +53,9 @@ namespace psncrawler
 
         public static async Task TryFind(int titleId, string environment)
         {
+			if (titleId >= 100000)
+				return;
+
             try
             {
                 if (AlreadyFound(titleId))
@@ -103,10 +106,18 @@ namespace psncrawler
         {
             var titlePath = GetTitlePath(titleId);
             var content = await Psn.GetUpdate(new Title(Cusa(titleId)));
+
+			if (string.IsNullOrEmpty(content))
+				return;
+
             var titlePatch = AsTitlePatch(content);
             var version = NormalizePatchVersion(titlePatch);
 
-            await File.WriteAllTextAsync($"{titlePath}/{Cusa(titleId)}-ver-{version}.xml", content);
+			var updateFilePath = $"{titlePath}/{Cusa(titleId)}-ver-{version}.xml";
+			if (!File.Exists(updateFilePath))
+				Info($"Update {version} found for {Cusa(titleId)}");
+
+            await File.WriteAllTextAsync(updateFilePath, content);
         }
 
         private static bool AlreadyFound(int id) => Directory.Exists(GetTitlePath(id));
@@ -149,6 +160,6 @@ namespace psncrawler
 
         private static string Cusa(int titleId) => $"CUSA{titleId:D05}";
         private static string GetTitlePath(int titleId) => GetFilePath(Cusa(titleId));
-        private static string GetFilePath(string fileName) => $"D:/_psn/{fileName}";
+        private static string GetFilePath(string fileName) => $"./psndb/{fileName}";
     }
 }
