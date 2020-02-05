@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
 using System.Xml.Serialization;
@@ -53,8 +52,8 @@ namespace psncrawler
 
         public static async Task TryFind(int titleId, string environment)
         {
-			if (titleId >= 100000)
-				return;
+            if (titleId >= 100000)
+                return;
 
             try
             {
@@ -92,14 +91,14 @@ namespace psncrawler
 
         private static async Task FindAndWriteTitleMetadata(int titleId)
         {
-                var content = await Psn.GetTmdb(new Title(Cusa(titleId)));
-                var tmdb = JsonConvert.DeserializeObject<Tmdb>(content);
-                Info($"{tmdb?.contentId ?? $"CUSA{titleId}"} found!");
+            var content = await Psn.GetTmdb(new Title(Cusa(titleId)));
+            var tmdb = JsonConvert.DeserializeObject<Tmdb>(content);
+            Info($"{tmdb?.contentId ?? $"CUSA{titleId}"} found!");
 
-                var titlePath = GetTitlePath(titleId);
-                Directory.CreateDirectory(titlePath);
+            var titlePath = GetTitlePath(titleId);
+            Directory.CreateDirectory(titlePath);
 
-                await File.WriteAllTextAsync($"{titlePath}/{Cusa(titleId)}_00.json", content);
+            await File.WriteAllTextAsync($"{titlePath}/{Cusa(titleId)}_00.json", content);
         }
 
         private static async Task FindAndWriteTitleUpdate(int titleId)
@@ -107,15 +106,15 @@ namespace psncrawler
             var titlePath = GetTitlePath(titleId);
             var content = await Psn.GetUpdate(new Title(Cusa(titleId)));
 
-			if (string.IsNullOrEmpty(content))
-				return;
+            if (string.IsNullOrEmpty(content))
+                return;
 
             var titlePatch = AsTitlePatch(content);
             var version = NormalizePatchVersion(titlePatch);
 
-			var updateFilePath = $"{titlePath}/{Cusa(titleId)}-ver-{version}.xml";
-			if (!File.Exists(updateFilePath))
-				Info($"Update {version} found for {Cusa(titleId)}");
+            var updateFilePath = $"{titlePath}/{Cusa(titleId)}-ver-{version}.xml";
+            if (!File.Exists(updateFilePath))
+                Info($"Update {version} found for {Cusa(titleId)}");
 
             await File.WriteAllTextAsync(updateFilePath, content);
         }
@@ -137,7 +136,7 @@ namespace psncrawler
 
         private static void LogInternal(string message)
         {
-            lock(_logger)
+            lock (_logger)
             {
                 var logMessage = $"[{DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")}] {message}";
                 Console.WriteLine(logMessage);
