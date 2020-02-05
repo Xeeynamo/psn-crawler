@@ -39,7 +39,7 @@ namespace psncrawler
                 taskList.Add(Explore(idStart, newIdEnd, environment));
                 idStart = newIdEnd;
             }
-            
+
             taskList.Add(Explore(idStart, idEnd, environment));
 
             await Task.WhenAll(taskList);
@@ -51,38 +51,19 @@ namespace psncrawler
                 await TryFind(i, environment);
         }
 
-        public static async Task TryFind(int id, string environment)
+        public static async Task TryFind(int titleId, string environment)
         {
-            if (AlreadyFound(id))
-            {
-                try
-                {
-                    var titlePath = GetTitlePath(id);
-                    var update = await Psn.GetUpdate(new Title(Cusa(id)));
-
-                    using var reader = new StringReader(update);
-                    var content = new XmlSerializer(typeof(TitlePatch)).Deserialize(reader) as TitlePatch;
-                    var version = content.Tag.Package.Version.Replace(".", "");
-
-                    using var file = File.CreateText($"{titlePath}/{Cusa(id)}-ver-{version}.xml");
-                    file.WriteLine(update);
-                }
-                catch {}
-            }
-            
-            return;
-
             try
             {
-                var tmdb = await Psn.GetTmdb(new Title(Cusa(id)));
-                var content = JsonConvert.DeserializeObject<Tmdb>(tmdb);
-                Info($"{content.contentId} found!");
-
-                var titlePath = GetTitlePath(id);
-                Directory.CreateDirectory(titlePath);
-
-                using var file = File.CreateText($"{titlePath}/{Cusa(id)}_00.json");
-                file.WriteLine(tmdb);
+                if (AlreadyFound(titleId))
+                {
+                    await FindAndWriteTitleUpdate(titleId);
+                }
+                else
+                {
+                    await FindAndWriteTitleMetadata(titleId);
+                    await FindAndWriteTitleUpdate(titleId);
+                }
             }
             catch (AggregateException e)
             {
@@ -90,21 +71,42 @@ namespace psncrawler
                 if (psnException != null)
                 {
                     if (ShouldRetry(psnException))
-                        await TryFind(id, environment);
+                        await TryFind(titleId, environment);
                 }
                 else
-                    Error(e.InnerException, id);
-                
+                    Error(e.InnerException, titleId);
             }
             catch (PsnException e)
             {
                 if (ShouldRetry(e))
-                    await TryFind(id, environment);
+                    await TryFind(titleId, environment);
             }
             catch (Exception e)
             {
-                Error(e, id);
+                Error(e, titleId);
             }
+        }
+
+        private static async Task FindAndWriteTitleMetadata(int titleId)
+        {
+                var content = await Psn.GetTmdb(new Title(Cusa(titleId)));
+                var tmdb = JsonConvert.DeserializeObject<Tmdb>(content);
+                Info($"{tmdb?.contentId ?? $"CUSA{titleId}"} found!");
+
+                var titlePath = GetTitlePath(titleId);
+                Directory.CreateDirectory(titlePath);
+
+                await File.WriteAllTextAsync($"{titlePath}/{Cusa(titleId)}_00.json", content);
+        }
+
+        private static async Task FindAndWriteTitleUpdate(int titleId)
+        {
+            var titlePath = GetTitlePath(titleId);
+            var content = await Psn.GetUpdate(new Title(Cusa(titleId)));
+            var titlePatch = AsTitlePatch(content);
+            var version = NormalizePatchVersion(titlePatch);
+
+            await File.WriteAllTextAsync($"{titlePath}/{Cusa(titleId)}-ver-{version}.xml", content);
         }
 
         private static bool AlreadyFound(int id) => Directory.Exists(GetTitlePath(id));
@@ -132,6 +134,18 @@ namespace psncrawler
                 logger.WriteLine(logMessage);
             }
         }
+
+        private static Tmdb AsTmdb(string content) =>
+            JsonConvert.DeserializeObject<Tmdb>(content);
+
+        private static TitlePatch AsTitlePatch(string content)
+        {
+            using var reader = new StringReader(content);
+            return new XmlSerializer(typeof(TitlePatch)).Deserialize(reader) as TitlePatch;
+        }
+
+        private static string NormalizePatchVersion(TitlePatch titlePatch) =>
+            titlePatch.Tag.Package.Version.Replace(".", "");
 
         private static string Cusa(int titleId) => $"CUSA{titleId:D05}";
         private static string GetTitlePath(int titleId) => GetFilePath(Cusa(titleId));
