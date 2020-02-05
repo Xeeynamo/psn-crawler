@@ -1,4 +1,5 @@
-﻿using System;
+﻿using psncrawler.Playstation;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
@@ -15,13 +16,15 @@ namespace psncrawler
             var logger = SetupLogger();
             await logger.InfoAsync("Ready!");
 
+            var notifier = SetupNotifier();
+
             if (!Directory.Exists(BasePath))
             {
                 await logger.WarningAsync($"Base path {BasePath} did not exist");
                 Directory.CreateDirectory(BasePath);
             }
 
-            await new Crawler(logger, BasePath, 30).ExploreMultithred(0, 30000, "np");
+            await new Crawler(logger, notifier, BasePath, 30).ExploreMultithred(0, 30000, "np");
         }
 
         private static ILogger SetupLogger() =>
@@ -31,6 +34,9 @@ namespace psncrawler
                 new ConcurrencyLogger(new ActionLogger(LogOnFile))
             });
 
+        private static ICrawlerNotifier SetupNotifier() =>
+            new DummyCrawlerNotifier();
+
         private static Task LogOnConsole(int severity, DateTime dateTime, string message)
         {
             Console.WriteLine($"[{dateTime.ToIso8601()}] {message}");
@@ -39,6 +45,13 @@ namespace psncrawler
 
         private static Task LogOnFile(int severity, DateTime dateTime, string message) =>
             File.AppendAllTextAsync(LogFile, $"[{dateTime.ToIso8601()}] {message}\n");
+    }
+
+    internal class DummyCrawlerNotifier : ICrawlerNotifier
+    {
+        public Task NotifyNewGameAsync(Tmdb database) => Task.CompletedTask;
+
+        public Task NotifyUpdateAsync(TitlePatch patch) => Task.CompletedTask;
     }
 
     internal static class DateTimeExtensions

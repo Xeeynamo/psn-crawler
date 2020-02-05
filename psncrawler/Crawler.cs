@@ -8,6 +8,12 @@ using System.Xml.Serialization;
 
 namespace psncrawler
 {
+    public interface ICrawlerNotifier
+    {
+        Task NotifyNewGameAsync(Tmdb database);
+        Task NotifyUpdateAsync(TitlePatch patch);
+    }
+
     public class Crawler
     {
         private class CrawlerException : Exception
@@ -19,12 +25,14 @@ namespace psncrawler
 
         private const int MaxTitleId = 100000;
         private readonly ILogger _logger;
+        private readonly ICrawlerNotifier _notifier;
         private readonly string _basePath;
         private readonly int _threadCount;
 
-        public Crawler(ILogger logger, string basePath, int threadCount)
+        public Crawler(ILogger logger, ICrawlerNotifier notifier, string basePath, int threadCount)
         {
             _logger = logger;
+            _notifier = notifier;
             _basePath = basePath;
             _threadCount = threadCount;
         }
@@ -111,6 +119,8 @@ namespace psncrawler
             Directory.CreateDirectory(titlePath);
 
             await File.WriteAllTextAsync($"{titlePath}/{Cusa(titleId)}_00.json", content);
+
+            await _notifier.NotifyNewGameAsync(tmdb);
         }
 
         private async Task FindAndWriteTitleUpdate(int titleId)
@@ -129,6 +139,8 @@ namespace psncrawler
                 await _logger.InfoAsync($"Update {version} found for {Cusa(titleId)}");
 
             await File.WriteAllTextAsync(updateFilePath, content);
+
+            await _notifier.NotifyUpdateAsync(titlePatch);
         }
 
         private bool AlreadyFound(int id) => Directory.Exists(GetTitlePath(id));
