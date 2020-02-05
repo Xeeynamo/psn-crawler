@@ -1,4 +1,4 @@
-using System;
+using psncrawler.Playstation;
 using Xunit;
 
 namespace psncrawler.tests
@@ -6,11 +6,13 @@ namespace psncrawler.tests
     public class PsnTests
     {
         [Theory]
-        [InlineData("CUSA12025_00", "something")]
-        public void Test1(string titleId, string expectedUrl)
-        {
-            var url = Psn.GetUrl(titleId);
-            Assert.Equal(expectedUrl, url);
-        }
+        [InlineData("CUSA00000", "http://tmdb.env.dl.playstation.net/tmdb2/CUSA00000_00_E2F7429044996DEDCA0AF0D69F7E352B3A6090B9/CUSA00000_00.json")]
+        public void GetTmdbTest(string titleId, string expectedUrl) =>
+            Assert.Equal(expectedUrl, Psn.GetTmdbUrl(new Title(titleId), "env"), true);
+            
+        [Theory]
+        [InlineData("CUSA00000", "http://gs-sec.ww.env.dl.playstation.net/plo/env/CUSA00000/997fbd6ca3d7b5301253cb4f5b1903ca9dc7f4e1de3c005bd4bb366ef5d99a91/CUSA00000-ver.xml")]
+        public void GetUpdateTest(string titleId, string expectedUrl) =>
+            Assert.Equal(expectedUrl, Psn.GetUpdateUrl(new Title(titleId), "env"), true);
     }
 }

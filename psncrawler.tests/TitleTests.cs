@@ -1,4 +1,5 @@
 using System;
+using psncrawler.Playstation;
 using Xunit;
 
 namespace psncrawler.tests
@@ -6,28 +7,37 @@ namespace psncrawler.tests
     public class TitleTests
     {
         [Theory]
-        [InlineData("BCXX00000_00", TitleCategory.PS3_BD)]
-        [InlineData("BLXX00000_00", TitleCategory.PS3_BD_2)]
-        [InlineData("CUXX00000_00", TitleCategory.PS4)]
-        [InlineData("NPXX00000_00", TitleCategory.Digital)]
-        [InlineData("MRXX00000_00", TitleCategory.PS3MultiRegion)]
-        [InlineData("PCXX00000_00", TitleCategory.PSVita)]
-        [InlineData("PLXX00000_00", TitleCategory.PS4_BD)]
-        [InlineData("SCXX00000_00", TitleCategory.PSLegacy)]
-        [InlineData("SLXX00000_00", TitleCategory.PSLegacy_2)]
-        [InlineData("UCXX00000_00", TitleCategory.Umd)]
-        [InlineData("ULXX00000_00", TitleCategory.Umd_2)]
-        [InlineData("VCXX00000_00", TitleCategory.PSVitaCard)]
-        [InlineData("VLXX00000_00", TitleCategory.PSVitaCard_2)]
-        [InlineData("XCXX00000_00", TitleCategory.PS3Extra)]
-        [InlineData("XLXX00000_00", TitleCategory.PS3Extra_2)]
-        [InlineData("PEXX00000_00", TitleCategory.PS12_EU)]
-        [InlineData("PTXX00000_00", TitleCategory.PS12_JP)]
-        [InlineData("PUXX00000_00", TitleCategory.PS12_US)]
-        public void Test1(string titleId, TitleCategory expectedCategory)
-        {
-            var title = new Title(titleId);
-            Assert.Equal(expectedCategory, title.Category);
-        }
+        [InlineData("BCUX00000", TitleCategory.PS3_BD)]
+        [InlineData("BLUX00000", TitleCategory.PS3_BD_2)]
+        [InlineData("CUUX00000", TitleCategory.PS4)]
+        [InlineData("NPUX00000", TitleCategory.Digital)]
+        [InlineData("MRUX00000", TitleCategory.PS3MultiRegion)]
+        [InlineData("PCUX00000", TitleCategory.PSVita)]
+        [InlineData("PLUX00000", TitleCategory.PS4_BD)]
+        [InlineData("SCUX00000", TitleCategory.PSLegacy)]
+        [InlineData("SLUX00000", TitleCategory.PSLegacy_2)]
+        [InlineData("UCUX00000", TitleCategory.Umd)]
+        [InlineData("ULUX00000", TitleCategory.Umd_2)]
+        [InlineData("VCUX00000", TitleCategory.PSVitaCard)]
+        [InlineData("VLUX00000", TitleCategory.PSVitaCard_2)]
+        [InlineData("XCUX00000", TitleCategory.PS3Extra)]
+        [InlineData("XLUX00000", TitleCategory.PS3Extra_2)]
+        [InlineData("PEUX00000", TitleCategory.PS12_EU)]
+        [InlineData("PTUX00000", TitleCategory.PS12_JP)]
+        [InlineData("PUUX00000", TitleCategory.PS12_US)]
+        public void CategoryTest(string titleId, TitleCategory expectedCategory) =>
+            Assert.Equal(expectedCategory, new Title(titleId).Category);
+
+        [Theory]
+        [InlineData("SLES12345", "12345")]
+        [InlineData("CUSAZZZZZ", "ZZZZZ")]
+        public void IdTest(string titleId, string expectedId) =>
+            Assert.Equal(expectedId, new Title(titleId).Id);
+
+        [Theory]
+        [InlineData("SLES12345")]
+        [InlineData("CUSAZZZZZ")]
+        public void ToStringTest(string titleId) =>
+            Assert.Equal(titleId, new Title(titleId).ToString());
     }
 }
