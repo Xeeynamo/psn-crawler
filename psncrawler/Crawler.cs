@@ -136,11 +136,14 @@ namespace psncrawler
 
             var updateFilePath = $"{titlePath}/{Cusa(titleId)}-ver-{version}.xml";
             if (!File.Exists(updateFilePath))
+            {
                 await _logger.InfoAsync($"Update {version} found for {Cusa(titleId)}");
 
-            await File.WriteAllTextAsync(updateFilePath, content);
+                await File.WriteAllTextAsync(updateFilePath, content);
 
-            await _notifier.NotifyUpdateAsync(titlePatch);
+                await _notifier.NotifyUpdateAsync(titlePatch);
+            }
+
         }
 
         private bool AlreadyFound(int id) => Directory.Exists(GetTitlePath(id));

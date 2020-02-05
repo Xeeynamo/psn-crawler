@@ -1,6 +1,11 @@
 ﻿using psncrawler.Playstation;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using System.Net;
+using System.Net.Http;
 using System.Threading.Tasks;
 using TweetSharp;
 
@@ -23,14 +28,73 @@ namespace psncrawler
             });
         }
 
-        public Task NotifyNewGameAsync(Tmdb database)
+        public async Task NotifyNewGameAsync(Tmdb database)
         {
-            return Task.CompletedTask;
+            var name = database.names?.FirstOrDefault(x => string.IsNullOrEmpty(x.lang))?.name ??
+                database.names?.FirstOrDefault()?.name ??
+                database?.contentId;
+
+            if (string.IsNullOrEmpty(name))
+                return;
+
+            var mediaIds = new List<string>();
+
+            if (!string.IsNullOrEmpty(database.backgroundImage))
+            {
+                using var client = new HttpClient();
+                using var response = await client.GetAsync(database.backgroundImage);
+
+                if (response.StatusCode == HttpStatusCode.OK)
+                {
+                    using var stream = await response.Content.ReadAsStreamAsync();
+
+                    var uploadResponse = await _twitterService.UploadMediaAsync(new UploadMediaOptions
+                    {
+                        Media = new MediaFile
+                        {
+                            FileName = $"{database.contentId}.png",
+                            Content = stream
+                        }
+                    });
+
+                    if (uploadResponse?.Value?.Media_Id != null)
+                        mediaIds.Add(uploadResponse.Value.Media_Id);
+                }
+            }
+
+            var region = GuessRegion(database.contentId);
+            var twitterResponse = await _twitterService.SendTweetAsync(new SendTweetOptions
+            {
+                Status = $"The game {name} has been added to the {region} PSN!",
+                MediaIds = mediaIds
+            });
         }
 
-        public Task NotifyUpdateAsync(TitlePatch patch)
+        public async Task NotifyUpdateAsync(TitlePatch patch)
         {
-            return Task.CompletedTask;
+            var name = patch.Tag.Package.Paramsfo.Title;
+            var versionString = patch.Tag.Package.Version;
+            var versionArray = versionString.Split('.');
+            var version = $"{int.Parse(versionArray[0])}.{versionArray[1]}";
+
+            var twitterResponse = await _twitterService.SendTweetAsync(new SendTweetOptions
+            {
+                Status = $"The update {version} for {name} has been released!"
+            });
+        }
+
+        private static string GuessRegion(string contentId)
+        {
+            var ch = contentId.First();
+            switch (ch)
+            {
+                case 'U': return "american";
+                case 'E': return "european";
+                case 'J': return "japanese";
+                case 'H': return "asian";
+                case 'I': return "internal";
+                default: return $"'{ch}'";
+            }
         }
 
         public static async Task<TwitterCrawlerNotifier> FromConsumer(
