@@ -9,7 +9,7 @@ namespace psncrawler
 {
     class Program
     {
-        private const string BasePath = "../../../../../psndb";
+        private const string BasePath = "../../../../psndb";
         private const string LogFile = "log";
 
         static async Task Main(string[] args)
