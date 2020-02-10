@@ -11,9 +11,18 @@ using TweetSharp;
 
 namespace psncrawler
 {
+    public class TwitterException : Exception
+    {
+        public TwitterException(TwitterResponse response) :
+            base($"Twitter error: {response.Error}")
+        { }
+    }
+
     public class TwitterCrawlerNotifier : ICrawlerNotifier
     {
         private readonly TwitterService _twitterService;
+
+        public ILogger Logger { get; set; }
 
         private TwitterCrawlerNotifier(TwitterService twitterService)
         {
@@ -68,6 +77,9 @@ namespace psncrawler
                 Status = $"The game {name} has been added to the {region} PSN!",
                 MediaIds = mediaIds
             });
+
+            if (twitterResponse.Response.StatusCode != HttpStatusCode.OK)
+                throw new TwitterException(twitterResponse.Response);
         }
 
         public async Task NotifyUpdateAsync(TitlePatch patch)
@@ -81,6 +93,9 @@ namespace psncrawler
             {
                 Status = $"The update {version} for {name} has been released!"
             });
+
+            if (twitterResponse.Response.StatusCode != HttpStatusCode.OK)
+                throw new TwitterException(twitterResponse.Response);
         }
 
         private static string GuessRegion(string contentId)

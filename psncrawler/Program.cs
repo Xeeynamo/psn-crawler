@@ -19,7 +19,7 @@ namespace psncrawler
             var logger = SetupLogger();
             await logger.InfoAsync("Ready!");
 
-            var notifier = await SetupNotifier(configuration);
+            var notifier = await SetupNotifier(configuration, logger);
 
             if (!Directory.Exists(BasePath))
             {
@@ -43,7 +43,8 @@ namespace psncrawler
                 new ConcurrencyLogger(new ActionLogger(LogOnFile))
             });
 
-        private static async Task<ICrawlerNotifier> SetupNotifier(Configuration configuration)
+        private static async Task<ICrawlerNotifier> SetupNotifier(
+            Configuration configuration, ILogger logger)
         {
             //var notifier = await TwitterCrawlerNotifier.FromConsumer(
             //    configuration.TwitterApiKey,
@@ -59,6 +60,7 @@ namespace psncrawler
                 configuration.TwitterApiSecret,
                 configuration.TwitterToken,
                 configuration.TwitterTokenSecret);
+            notifier.Logger = logger;
 
             return notifier;
         }
