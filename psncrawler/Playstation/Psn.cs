@@ -15,7 +15,7 @@ namespace psncrawler.Playstation
         private static readonly byte[] TmdbKey = AsByteArray(TmdbHmacKey);
         private static readonly byte[] UpdateKey = AsByteArray(UpdateHmacKey);
 
-        public static string GetTmdbUrl(Title title, string environment = "np")
+        public static string GetTmdbUrl(Title title, string environment)
         {
             switch (title.Category)
             {
@@ -25,7 +25,7 @@ namespace psncrawler.Playstation
             }
         }
         
-        public static string GetUpdateUrl(Title title, string environment = "np")
+        public static string GetUpdateUrl(Title title, string environment)
         {
             switch (title.Category)
             {
@@ -35,11 +35,11 @@ namespace psncrawler.Playstation
             }
         }
 
-        public static async Task<string> GetTmdb(Title title) =>
-            await GetContent(GetTmdbUrl(title));
+        public static async Task<string> GetTmdb(Title title, string environment) =>
+            await GetContent(GetTmdbUrl(title, environment));
 
-        public static async Task<string> GetUpdate(Title title) => 
-            await GetContent(GetUpdateUrl(title));
+        public static async Task<string> GetUpdate(Title title, string environment) => 
+            await GetContent(GetUpdateUrl(title, environment));
 
         private static async Task<string> GetContent(string url)
         {

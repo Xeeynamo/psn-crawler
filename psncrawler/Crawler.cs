@@ -29,7 +29,8 @@ namespace psncrawler
         private readonly string _basePath;
         private readonly int _threadCount;
 
-        public Crawler(ILogger logger, ICrawlerNotifier notifier, string basePath, int threadCount)
+        public Crawler(
+            ILogger logger, ICrawlerNotifier notifier, string basePath, int threadCount)
         {
             _logger = logger;
             _notifier = notifier;
@@ -49,7 +50,7 @@ namespace psncrawler
 
         private async Task ExploreMultithreadInternal(int idStart, int idEnd, string environment)
         {
-            await _logger.DebugAsync($"Exploring from {idStart:D05} to {idEnd:D05}...");
+            await _logger.DebugAsync($"Exploring from {idStart:D05} to {idEnd:D05} for {environment}...");
 
             int titleCount = idEnd - idStart;
             var titlePerThread = titleCount / _threadCount;
@@ -79,12 +80,12 @@ namespace psncrawler
             {
                 if (AlreadyFound(titleId))
                 {
-                    await FindAndWriteTitleUpdate(titleId);
+                    await FindAndWriteTitleUpdate(titleId, environment);
                 }
                 else
                 {
-                    await FindAndWriteTitleMetadata(titleId);
-                    await FindAndWriteTitleUpdate(titleId);
+                    await FindAndWriteTitleMetadata(titleId, environment);
+                    await FindAndWriteTitleUpdate(titleId, environment);
                 }
             }
             catch (AggregateException e)
@@ -109,9 +110,9 @@ namespace psncrawler
             }
         }
 
-        private async Task FindAndWriteTitleMetadata(int titleId)
+        private async Task FindAndWriteTitleMetadata(int titleId, string environment)
         {
-            var content = await Psn.GetTmdb(new Title(Cusa(titleId)));
+            var content = await Psn.GetTmdb(new Title(Cusa(titleId)), environment);
             var tmdb = JsonConvert.DeserializeObject<Tmdb>(content);
             await _logger.InfoAsync($"{tmdb?.contentId ?? $"CUSA{titleId}"} found!");
 
@@ -123,10 +124,10 @@ namespace psncrawler
             await _notifier.NotifyNewGameAsync(tmdb);
         }
 
-        private async Task FindAndWriteTitleUpdate(int titleId)
+        private async Task FindAndWriteTitleUpdate(int titleId, string environment)
         {
             var titlePath = GetTitlePath(titleId);
-            var content = await Psn.GetUpdate(new Title(Cusa(titleId)));
+            var content = await Psn.GetUpdate(new Title(Cusa(titleId)), environment);
 
             if (string.IsNullOrEmpty(content))
                 return;

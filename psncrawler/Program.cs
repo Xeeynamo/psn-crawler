@@ -11,6 +11,7 @@ namespace psncrawler
     {
         private const string BasePath = "../../../../../psndb";
         private const string LogFile = "log";
+        private static readonly TimeSpan delay = TimeSpan.FromHours(4);
 
         static async Task Main(string[] args)
         {
@@ -24,10 +25,14 @@ namespace psncrawler
             if (!Directory.Exists(BasePath))
             {
                 await logger.WarningAsync($"Base path {BasePath} did not exist");
-                Directory.CreateDirectory(BasePath);
+                return;
             }
 
-            await new Crawler(logger, notifier, BasePath, 30).ExploreMultithred(0, 30000, "np");
+            while (true)
+            {
+                await new Crawler(logger, notifier, BasePath, 30).ExploreMultithred(0, 30000, "np");
+                await Task.Delay(delay);
+            }
         }
 
         private static async Task<Configuration> ReadConfiguration(string fileName)
