@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -39,11 +38,8 @@ namespace psncrawler
 
         public async Task NotifyNewGameAsync(Tmdb database)
         {
-            var name = database.names?.FirstOrDefault(x => string.IsNullOrEmpty(x.lang))?.name ??
-                database.names?.FirstOrDefault()?.name ??
-                database?.contentId;
-
-            if (string.IsNullOrEmpty(name))
+            var message = SocialMessageService.GetNewGameMessage(database);
+            if (message == null)
                 return;
 
             var mediaIds = new List<string>();
@@ -71,10 +67,9 @@ namespace psncrawler
                 }
             }
 
-            var region = GuessRegion(database.contentId);
             var twitterResponse = await _twitterService.SendTweetAsync(new SendTweetOptions
             {
-                Status = $"The game {name} has been added to the {region} PSN!",
+                Status = message,
                 MediaIds = mediaIds
             });
 
@@ -96,20 +91,6 @@ namespace psncrawler
 
             if (twitterResponse.Response.StatusCode != HttpStatusCode.OK)
                 throw new TwitterException(twitterResponse.Response);
-        }
-
-        private static string GuessRegion(string contentId)
-        {
-            var ch = contentId.First();
-            switch (ch)
-            {
-                case 'U': return "american";
-                case 'E': return "european";
-                case 'J': return "japanese";
-                case 'H': return "asian";
-                case 'I': return "internal";
-                default: return $"'{ch}'";
-            }
         }
 
         public static async Task<TwitterCrawlerNotifier> FromConsumer(
