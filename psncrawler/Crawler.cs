@@ -18,8 +18,8 @@ namespace psncrawler
     {
         private class CrawlerException : Exception
         {
-            public CrawlerException(Exception innerException, int titleId) :
-                base($"Crawler error on CUSA{titleId:D05}: {innerException.Message}", innerException)
+            public CrawlerException(Exception innerException, Title title) :
+                base($"Crawler error on {title}: {innerException.Message}", innerException)
             { }
         }
 
@@ -38,17 +38,17 @@ namespace psncrawler
             _threadCount = threadCount;
         }
 
-        public async Task ExploreMultithred(int idStart, int idEnd, string environment)
+        public async Task ExploreMultithred(string prefix, int idStart, int idEnd, string environment)
         {
             var increment = _threadCount * 50;
 
             for (var i = idStart; i < idEnd; i += increment)
             {
-                await ExploreMultithreadInternal(i, i + increment, environment);
+                await ExploreMultithreadInternal(prefix, i, i + increment, environment);
             }
         }
 
-        private async Task ExploreMultithreadInternal(int idStart, int idEnd, string environment)
+        private async Task ExploreMultithreadInternal(string prefix, int idStart, int idEnd, string environment)
         {
             await _logger.DebugAsync($"Exploring from {idStart:D05} to {idEnd:D05} for {environment}...");
 
@@ -59,22 +59,24 @@ namespace psncrawler
             for (int i = 0; i < _threadCount - 1; i++)
             {
                 var newIdEnd = Math.Min(idStart + titlePerThread, MaxTitleId);
-                taskList.Add(Explore(idStart, newIdEnd, environment));
+                taskList.Add(Explore(prefix, idStart, newIdEnd, environment));
                 idStart = newIdEnd;
             }
 
-            taskList.Add(Explore(idStart, idEnd, environment));
+            taskList.Add(Explore(prefix, idStart, idEnd, environment));
 
             await Task.WhenAll(taskList);
         }
 
-        private async Task Explore(int idStart, int idEnd, string environment)
+        private async Task Explore(string prefix, int idStart, int idEnd, string environment)
         {
             for (int i = idStart; i <= idEnd; i++)
-                await TryFind(i, environment);
+            {
+                await TryFind(new Title($"{prefix}{i:D05}"), environment);
+            }
         }
 
-        private async Task TryFind(int titleId, string environment)
+        private async Task TryFind(Title titleId, string environment)
         {
             try
             {
@@ -110,24 +112,24 @@ namespace psncrawler
             }
         }
 
-        private async Task FindAndWriteTitleMetadata(int titleId, string environment)
+        private async Task FindAndWriteTitleMetadata(Title title, string environment)
         {
-            var content = await Psn.GetTmdb(new Title(Cusa(titleId)), environment);
+            var content = await Psn.GetTmdb(title, environment);
             var tmdb = JsonConvert.DeserializeObject<Tmdb>(content);
-            await _logger.InfoAsync($"{tmdb?.contentId ?? $"CUSA{titleId}"} found!");
+            await _logger.InfoAsync($"{tmdb?.contentId ?? $"CUSA{title}"} found!");
 
-            var titlePath = GetTitlePath(titleId);
+            var titlePath = GetTitlePath(title);
             Directory.CreateDirectory(titlePath);
 
-            await File.WriteAllTextAsync($"{titlePath}/{Cusa(titleId)}_00.json", content);
+            await File.WriteAllTextAsync($"{titlePath}/{title}_00.json", content);
 
             await _notifier.NotifyNewGameAsync(tmdb);
         }
 
-        private async Task FindAndWriteTitleUpdate(int titleId, string environment)
+        private async Task FindAndWriteTitleUpdate(Title title, string environment)
         {
-            var titlePath = GetTitlePath(titleId);
-            var content = await Psn.GetUpdate(new Title(Cusa(titleId)), environment);
+            var titlePath = GetTitlePath(title);
+            var content = await Psn.GetUpdate(title, environment);
 
             if (string.IsNullOrEmpty(content))
                 return;
@@ -135,10 +137,10 @@ namespace psncrawler
             var titlePatch = AsTitlePatch(content);
             var version = NormalizePatchVersion(titlePatch);
 
-            var updateFilePath = $"{titlePath}/{Cusa(titleId)}-ver-{version}.xml";
+            var updateFilePath = $"{titlePath}/{title}-ver-{version}.xml";
             if (!File.Exists(updateFilePath))
             {
-                await _logger.InfoAsync($"Update {version} found for {Cusa(titleId)}");
+                await _logger.InfoAsync($"Update {version} found for {title}");
 
                 await File.WriteAllTextAsync(updateFilePath, content);
 
@@ -147,11 +149,11 @@ namespace psncrawler
 
         }
 
-        private bool AlreadyFound(int id) => Directory.Exists(GetTitlePath(id));
+        private bool AlreadyFound(Title title) => Directory.Exists(GetTitlePath(title));
 
         private bool ShouldRetry(PsnException e) => e.StatusCode != 404;
 
-        private string GetTitlePath(int titleId) => GetFilePath(Cusa(titleId));
+        private string GetTitlePath(Title title) => GetFilePath(title.ToString());
         private string GetFilePath(string fileName) => Path.Combine(_basePath, fileName);
 
         private static Tmdb AsTmdb(string content) =>
@@ -165,7 +167,5 @@ namespace psncrawler
 
         private static string NormalizePatchVersion(TitlePatch titlePatch) =>
             titlePatch.Tag.Package.Version.Replace(".", "");
-
-        private static string Cusa(int titleId) => $"CUSA{titleId:D05}";
     }
 }

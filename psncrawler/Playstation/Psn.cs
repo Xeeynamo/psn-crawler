@@ -12,8 +12,11 @@ namespace psncrawler.Playstation
     {
         private const string TmdbHmacKey = "F5DE66D2680E255B2DF79E74F890EBF349262F618BCAE2A9ACCDEE5156CE8DF2CDF2D48C71173CDC2594465B87405D197CF1AED3B7E9671EEB56CA6753C2E6B0";
         private const string UpdateHmacKey = "AD62E37F905E06BC19593142281C112CEC0E7EC3E97EFDCAEFCDBAAFA6378D84";
+        private const string VitaUpdateHmacKey = "E5E278AA1EE34082A088279C83F9BBC806821C52F2AB5D2B4ABD995450355114";
+
         private static readonly byte[] TmdbKey = AsByteArray(TmdbHmacKey);
         private static readonly byte[] UpdateKey = AsByteArray(UpdateHmacKey);
+        private static readonly byte[] VitaUpdateKey = AsByteArray(VitaUpdateHmacKey);
 
         public static string GetTmdbUrl(Title title, string environment)
         {
@@ -30,6 +33,7 @@ namespace psncrawler.Playstation
             switch (title.Category)
             {
                 case TitleCategory.PS4: return GetUpdateUrlInternal(title, environment);
+                case TitleCategory.PSVita: return GetVitaUpdateUrlInternal(title, environment);
                 default: 
                     throw new NotImplementedException();
             }
@@ -65,6 +69,13 @@ namespace psncrawler.Playstation
             var fullTitle = $"np_{title}";
             var hash = GetHmacSha256(UpdateKey, fullTitle).ToLower();
             return $"http://gs-sec.ww.{environment}.dl.playstation.net/plo/{environment}/{title}/{hash}/{title}-ver.xml";
+        }
+
+        private static string GetVitaUpdateUrlInternal(Title title, string environment)
+        {
+            var fullTitle = $"np_{title}";
+            var hash = GetHmacSha256(VitaUpdateKey, fullTitle).ToLower();
+            return $"http://gs-sec.ww.{environment}.dl.playstation.net/pl/np/{environment}/{title}/{hash}/{title}-ver.xml";
         }
 
         private static string GetHmacSha1(byte[] key, string message)

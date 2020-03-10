@@ -30,7 +30,7 @@ namespace psncrawler
 
             while (true)
             {
-                await new Crawler(logger, notifier, BasePath, 30).ExploreMultithred(0, 30000, "np");
+                await new Crawler(logger, notifier, BasePath, 30).ExploreMultithred("CUSA", 0, 30000, "np");
                 await Task.Delay(delay);
             }
         }

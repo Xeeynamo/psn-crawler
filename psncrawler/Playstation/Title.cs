@@ -78,24 +78,47 @@ namespace psncrawler.Playstation
 
         public Title(string titleId)
         {
+            _source = titleId;
+
             Category = CategoryReversedMap[titleId.Substring(0, 2)];
+            switch (Category)
+            {
+                case TitleCategory.Digital:
+                    switch (titleId.Substring(0, 5))
+                    {
+                        case "NPSX1":
+                            Category = TitleCategory.PSVita;
+                            break;
+                        case "NPSX2":
+                            Category = TitleCategory.PS4;
+                            break;
+                    }
+                    break;
+                case TitleCategory.PS4:
+                    Id = titleId.Substring(4, 5);
+                    break;
+            }
+
             //Region = RegionReversedMap[titleId[3]];
-            Id = titleId.Substring(4, 5);
         }
 
+        private readonly string _source;
         public TitleCategory Category { get; }
         public TitleRegion Region { get; }
         public string Id { get; }
 
         public override string ToString()
         {
-            switch (Category)
-            {
-                case TitleCategory.PS4:
-                    return $"{CategoryMap[Category]}SA{Id}";
-                default:
-                    throw new NotImplementedException();
-            }
+            return _source;
+            //switch (Category)
+            //{
+            //    case TitleCategory.PS4:
+            //        return $"{CategoryMap[Category]}SA{Id}";
+            //    case TitleCategory.PSVita:
+            //        return $"NPSX{Id}";
+            //    default:
+            //        throw new NotImplementedException();
+            //}
         }
     }
 }
