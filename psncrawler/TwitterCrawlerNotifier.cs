@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -62,9 +61,22 @@ namespace psncrawler
                         }
                     });
 
-                    if (uploadResponse?.Value?.Media_Id != null)
-                        mediaIds.Add(uploadResponse.Value.Media_Id);
+                    if (uploadResponse.Response.StatusCode != HttpStatusCode.OK)
+                    {
+                        await Logger.ErrorAsync($"Tweet media for {database?.contentId ?? "unk"} failed to upload: {uploadResponse.Response.Error}");
+                    }
+                    else
+                    {
+                        if (uploadResponse?.Value?.Media_Id != null)
+                        {
+                            await Logger.DebugAsync($"Tweet media for {database?.contentId ?? "unk"} uploaded to {uploadResponse.Value.Media_Id}");
+                            mediaIds.Add(uploadResponse.Value.Media_Id);
+                        }
+
+                    }
                 }
+                else
+                    await Logger.ErrorAsync($"Unable to download {nameof(Tmdb.backgroundImage)} for {database?.contentId ?? "unk"}");
             }
 
             var twitterResponse = await _twitterService.SendTweetAsync(new SendTweetOptions
@@ -74,7 +86,12 @@ namespace psncrawler
             });
 
             if (twitterResponse.Response.StatusCode != HttpStatusCode.OK)
+            {
+                await Logger.ErrorAsync($"Tweet update for {database?.contentId ?? "unk"} failed: {twitterResponse.Response.Error}");
                 throw new TwitterException(twitterResponse.Response);
+            }
+
+            await Logger.DebugAsync($"Tweet new game title {database?.contentId ?? "unk"}");
         }
 
         public async Task NotifyUpdateAsync(TitlePatch patch)
@@ -90,7 +107,12 @@ namespace psncrawler
             });
 
             if (twitterResponse.Response.StatusCode != HttpStatusCode.OK)
+            {
+                await Logger.ErrorAsync($"Tweet update for {patch.Titleid} failed: {twitterResponse.Response.Error}");
                 throw new TwitterException(twitterResponse.Response);
+            }
+
+            await Logger.DebugAsync($"Post tweet update for {patch.Titleid}");
         }
 
         public static async Task<TwitterCrawlerNotifier> FromConsumer(
