@@ -57,7 +57,7 @@ namespace psncrawler
 
         private async Task ExploreMultithreadInternal(string prefix, int idStart, int idEnd, string environment)
         {
-            await _logger.DebugAsync($"Exploring from {idStart:D05} to {idEnd:D05} for {environment}...");
+            await _logger.DebugAsync($"Exploring from {prefix}{idStart:D05} to {prefix}{idEnd:D05} for {environment}...");
 
             int titleCount = idEnd - idStart;
             var titlePerThread = titleCount / _threadCount;

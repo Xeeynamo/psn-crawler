@@ -64,7 +64,8 @@ namespace psncrawler
             var logger = SetupLogger();
             await logger.InfoAsync("Ready!");
 
-            var notifier = await SetupNotifier(configuration, logger);
+            //var notifier = await SetupNotifier(configuration, logger);
+            var notifier = new DummyCrawlerNotifier();
 
             if (!Directory.Exists(BasePath))
             {
@@ -106,8 +107,6 @@ namespace psncrawler
             //        Console.Write("Twitter pin: ");
             //        return Console.ReadLine();
             //    });
-
-            return new DummyCrawlerNotifier();
 
             var notifier = await TwitterCrawlerNotifier.FromAccess(
                 configuration.TwitterApiKey,
