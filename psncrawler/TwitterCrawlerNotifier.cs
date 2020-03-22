@@ -35,7 +35,7 @@ namespace psncrawler
             });
         }
 
-        public async Task NotifyNewGameAsync(Tmdb database)
+        public async Task NotifyNewGameAsync(Tmdb2 database)
         {
             var message = SocialMessageService.GetNewGameMessage(database);
             if (message == null)
@@ -76,7 +76,7 @@ namespace psncrawler
                     }
                 }
                 else
-                    await Logger.ErrorAsync($"Unable to download {nameof(Tmdb.backgroundImage)} for {database?.contentId ?? "unk"}");
+                    await Logger.ErrorAsync($"Unable to download {nameof(Tmdb2.backgroundImage)} for {database?.contentId ?? "unk"}");
             }
 
             var twitterResponse = await _twitterService.SendTweetAsync(new SendTweetOptions

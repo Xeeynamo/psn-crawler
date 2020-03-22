@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -18,14 +19,10 @@ namespace psncrawler.Playstation
         private static readonly byte[] UpdateKey = AsByteArray(UpdateHmacKey);
         private static readonly byte[] VitaUpdateKey = AsByteArray(VitaUpdateHmacKey);
 
-        public static string GetTmdbUrl(Title title, string environment)
+        public static IEnumerable<string> GetTmdbUrl(Title title, string environment)
         {
-            switch (title.Category)
-            {
-                case TitleCategory.PS4: return GetTmdb2UrlInternal(title, environment);
-                default: 
-                    throw new NotImplementedException();
-            }
+            yield return GetTmdb2UrlInternal(title, environment);
+            yield return GetTmdbUrlInternal(title, environment);
         }
         
         public static string GetUpdateUrl(Title title, string environment)
@@ -55,6 +52,42 @@ namespace psncrawler.Playstation
                 throw new PsnException(url, (int)response.StatusCode, body);
 
             return body;
+        }
+
+        private static async Task<string> GetContent(IEnumerable<string> urls)
+        {
+            string lastUrl = "NONE";
+            HttpStatusCode lastStatusCode = default;
+
+            using var client = new HttpClient();
+            foreach (var url in urls)
+            {
+                using var response = await client.GetAsync(url);
+                lastUrl = url;
+                lastStatusCode = response.StatusCode;
+
+                if ((int)response.StatusCode >= 400)
+                {
+                    if (response.StatusCode == HttpStatusCode.NotFound)
+                        continue;
+                    break;
+                }
+                
+                var body = await response.Content.ReadAsStringAsync();
+                if (body.Length <= 2)
+                    continue;
+
+                return body;
+            }
+
+            throw new PsnException(lastUrl, (int)lastStatusCode, string.Empty);
+        }
+
+        private static string GetTmdbUrlInternal(Title title, string environment)
+        {
+            var fullTitle = $"{title}_00";
+            var hash = GetHmacSha1(TmdbKey, fullTitle);
+            return $"http://tmdb.{environment}.dl.playstation.net/tmdb/{fullTitle}_{hash}/{fullTitle}.xml";
         }
 
         private static string GetTmdb2UrlInternal(Title title, string environment)

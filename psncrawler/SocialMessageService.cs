@@ -6,7 +6,7 @@ namespace psncrawler
 {
     public static class SocialMessageService
     {
-        public static string GetNewGameMessage(Tmdb database)
+        public static string GetNewGameMessage(Tmdb2 database)
         {
             var name = GetDefaultName(database);
             if (name == null)
@@ -20,7 +20,7 @@ namespace psncrawler
             return $"The game {Append(name)}{Append(applicationId)}has been added to the {Append(console)}{Append(region)}PSN!";
         }
 
-        private static string GetApplicationId(Tmdb database)
+        private static string GetApplicationId(Tmdb2 database)
         {
             var npTitleId = database?.npTitleId;
             if (string.IsNullOrEmpty(npTitleId))
@@ -32,7 +32,7 @@ namespace psncrawler
             return database.npTitleId.Substring(0, 9);
         }
 
-        private static string GetConsoleId(Tmdb database)
+        private static string GetConsoleId(Tmdb2 database)
         {
             var console = database?.console?.ToUpper();
             if (string.IsNullOrEmpty(console))
@@ -45,16 +45,16 @@ namespace psncrawler
             }
         }
 
-        private static string GetContentId(Tmdb database) => database?.contentId;
+        private static string GetContentId(Tmdb2 database) => database?.contentId;
 
-        private static string GetDefaultName(Tmdb database) =>
+        private static string GetDefaultName(Tmdb2 database) =>
             database.names != null ? GetDefaultName(database.names) : null;
 
-        private static string GetDefaultName(List<TmdbName> names) =>
-            names?.FirstOrDefault(IsDefaultLanguage)?.name ??
-            names?.FirstOrDefault()?.name;
+        private static string GetDefaultName(List<Tmdb2Name> names) =>
+            names?.FirstOrDefault(IsDefaultLanguage)?.Name ??
+            names?.FirstOrDefault()?.Name;
 
-        private static bool IsDefaultLanguage(TmdbName name) => string.IsNullOrEmpty(name.lang);
+        private static bool IsDefaultLanguage(Tmdb2Name name) => string.IsNullOrEmpty(name.Lang);
 
         private static string GetRegion(string contentId)
         {

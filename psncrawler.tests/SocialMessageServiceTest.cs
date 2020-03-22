@@ -8,13 +8,13 @@ namespace psncrawler.tests
         [Fact]
         public void TestMessageWhenDefaultLanguageIsProvided()
         {
-            var message = SocialMessageService.GetNewGameMessage(new Playstation.Tmdb
+            var message = SocialMessageService.GetNewGameMessage(new Playstation.Tmdb2
             {
-                names = new List<Playstation.TmdbName>
+                names = new List<Playstation.Tmdb2Name>
                 {
-                    new Playstation.TmdbName() { lang = "some language", name = "wrong name" },
-                    new Playstation.TmdbName() { lang = null, name = "correct name" },
-                    new Playstation.TmdbName() { lang = "another language", name = "another wrong name" },
+                    new Playstation.Tmdb2Name() { Lang = "some language", Name = "wrong name" },
+                    new Playstation.Tmdb2Name() { Lang = null, Name = "correct name" },
+                    new Playstation.Tmdb2Name() { Lang = "another language", Name = "another wrong name" },
                 }
             });
             Assert.Equal("The game correct name has been added to the PSN!", message);
@@ -23,12 +23,12 @@ namespace psncrawler.tests
         [Fact]
         public void TestMessageWhenNoDefaultLanguageIsProvided()
         {
-            var message = SocialMessageService.GetNewGameMessage(new Playstation.Tmdb
+            var message = SocialMessageService.GetNewGameMessage(new Playstation.Tmdb2
             {
-                names = new List<Playstation.TmdbName>
+                names = new List<Playstation.Tmdb2Name>
                 {
-                    new Playstation.TmdbName() { lang = "some language", name = "right name" },
-                    new Playstation.TmdbName() { lang = "another language", name = "another wrong name" },
+                    new Playstation.Tmdb2Name() { Lang = "some language", Name = "right name" },
+                    new Playstation.Tmdb2Name() { Lang = "another language", Name = "another wrong name" },
                 }
             });
             Assert.Equal("The game right name has been added to the PSN!", message);
@@ -37,9 +37,9 @@ namespace psncrawler.tests
         [Fact]
         public void FailsWhenGameNameListIsEmpty()
         {
-            var message = SocialMessageService.GetNewGameMessage(new Playstation.Tmdb
+            var message = SocialMessageService.GetNewGameMessage(new Playstation.Tmdb2
             {
-                names = new List<Playstation.TmdbName>()
+                names = new List<Playstation.Tmdb2Name>()
             });
             Assert.Null(message);
         }
@@ -47,7 +47,7 @@ namespace psncrawler.tests
         [Fact]
         public void FailsWhenNoGameNameIsFound()
         {
-            var message = SocialMessageService.GetNewGameMessage(new Playstation.Tmdb
+            var message = SocialMessageService.GetNewGameMessage(new Playstation.Tmdb2
             {
                 names = null
             });
@@ -64,11 +64,11 @@ namespace psncrawler.tests
         [InlineData(null, "to the PSN")]
         public void TestRegionInMessage(string contentId, string expectedMessage)
         {
-            var message = SocialMessageService.GetNewGameMessage(new Playstation.Tmdb
+            var message = SocialMessageService.GetNewGameMessage(new Playstation.Tmdb2
             {
-                names = new List<Playstation.TmdbName>
+                names = new List<Playstation.Tmdb2Name>
                 {
-                    new Playstation.TmdbName() { name = "ciccio" },
+                    new Playstation.Tmdb2Name() { Name = "ciccio" },
                 },
                 contentId = contentId
             });
@@ -81,11 +81,11 @@ namespace psncrawler.tests
         [InlineData("CUSA12345_00", "CUSA12345")]
         public void TestApplicationIdInMessage(string npTitleId, string expectedMessage)
         {
-            var message = SocialMessageService.GetNewGameMessage(new Playstation.Tmdb
+            var message = SocialMessageService.GetNewGameMessage(new Playstation.Tmdb2
             {
-                names = new List<Playstation.TmdbName>
+                names = new List<Playstation.Tmdb2Name>
                 {
-                    new Playstation.TmdbName() { name = "ciccio" }
+                    new Playstation.Tmdb2Name() { Name = "ciccio" }
                 },
                 npTitleId = npTitleId
             });
@@ -101,11 +101,11 @@ namespace psncrawler.tests
         [InlineData(null, "the PSN")]
         public void TestMessageWithConsole(string console, string expected)
         {
-            var message = SocialMessageService.GetNewGameMessage(new Playstation.Tmdb
+            var message = SocialMessageService.GetNewGameMessage(new Playstation.Tmdb2
             {
-                names = new List<Playstation.TmdbName>
+                names = new List<Playstation.Tmdb2Name>
                 {
-                    new Playstation.TmdbName() { name = "ciccio" }
+                    new Playstation.Tmdb2Name() { Name = "ciccio" }
                 },
                 console = console
             });
@@ -116,11 +116,11 @@ namespace psncrawler.tests
         [Fact]
         public void TestMessageWithEverythingInside()
         {
-            var message = SocialMessageService.GetNewGameMessage(new Playstation.Tmdb
+            var message = SocialMessageService.GetNewGameMessage(new Playstation.Tmdb2
             {
-                names = new List<Playstation.TmdbName>
+                names = new List<Playstation.Tmdb2Name>
                 {
-                    new Playstation.TmdbName() { name = "ciccio" },
+                    new Playstation.Tmdb2Name() { Name = "ciccio" },
                 },
                 npTitleId = "CUSA12345",
                 contentId = "EP7777_CUSA12345_00-0123456789ABCDEF",

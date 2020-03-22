@@ -10,7 +10,7 @@ namespace psncrawler
 {
     public interface ICrawlerNotifier
     {
-        Task NotifyNewGameAsync(Tmdb database);
+        Task NotifyNewGameAsync(Tmdb2 database);
         Task NotifyUpdateAsync(TitlePatch patch);
     }
 
@@ -18,9 +18,16 @@ namespace psncrawler
     {
         private class CrawlerException : Exception
         {
+            private readonly Exception innerException;
+
             public CrawlerException(Exception innerException, Title title) :
                 base($"Crawler error on {title}: {innerException.Message}", innerException)
-            { }
+            {
+                this.innerException = innerException;
+            }
+
+            public override string Source => innerException.Source;
+            public override string StackTrace => innerException.StackTrace;
         }
 
         private const int MaxTitleId = 100000;
@@ -115,13 +122,22 @@ namespace psncrawler
         private async Task FindAndWriteTitleMetadata(Title title, string environment)
         {
             var content = await Psn.GetTmdb(title, environment);
-            var tmdb = JsonConvert.DeserializeObject<Tmdb>(content);
-            await _logger.InfoAsync($"{tmdb?.contentId ?? $"CUSA{title}"} found!");
+            var tmdb = AsTmdb(content);
+
+            await _logger.InfoAsync($"{title} found!");
 
             var titlePath = GetTitlePath(title);
             Directory.CreateDirectory(titlePath);
 
-            await File.WriteAllTextAsync($"{titlePath}/{title}_00.json", content);
+            if (content[0] == '{')
+                await File.WriteAllTextAsync($"{titlePath}/{title}_00.json", content);
+            else if (content[0] == '<')
+                await File.WriteAllTextAsync($"{titlePath}/{title}_00.xml", content);
+            else
+            {
+                await _logger.WarningAsync($"Tmdb of {title} not recognized. Starts with '{content[0]}'");
+                await File.WriteAllTextAsync($"{titlePath}/{title}_00.raw", content);
+            }
 
             await _notifier.NotifyNewGameAsync(tmdb);
         }
@@ -156,8 +172,40 @@ namespace psncrawler
         private string GetTitlePath(Title title) => GetFilePath(title.ToString());
         private string GetFilePath(string fileName) => Path.Combine(_basePath, fileName);
 
-        private static Tmdb AsTmdb(string content) =>
-            JsonConvert.DeserializeObject<Tmdb>(content);
+
+        private static Tmdb2 AsTmdb(string content)
+        {
+            if (content.Length == 0)
+                return null;
+
+            if (content[0] == '{')
+                return JsonConvert.DeserializeObject<Tmdb2>(content);
+
+            using var reader = new StringReader(content);
+            var tmdb = new XmlSerializer(typeof(TmdbTitleInfo)).Deserialize(reader) as TmdbTitleInfo;
+
+            return new Tmdb2
+            {
+                npTitleId = tmdb.Id,
+                console = tmdb.Console,
+                names = new List<Tmdb2Name>()
+                {
+                    new Tmdb2Name
+                    {
+                        Name = tmdb.Name
+                    }
+                },
+                parentalLevel = int.Parse(tmdb.Parentallevel),
+                icons = new List<Tmdb2Icon>()
+                {
+                    new Tmdb2Icon
+                    {
+                        Type = tmdb.Icon.Type,
+                        Icon = tmdb.Icon.Url
+                    }
+                }
+            };
+        }
 
         private static TitlePatch AsTitlePatch(string content)
         {

@@ -3,15 +3,59 @@ using psncrawler.Playstation;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace psncrawler
 {
     class Program
     {
-        private const string BasePath = "../../../../../psndb";
+        private const string BasePath = "D:\\psndb";
         private const string LogFile = "log";
         private static readonly TimeSpan delay = TimeSpan.FromHours(4);
+
+        private static readonly string[] Letters = new string[]
+        {
+            "A", "B", "C", "D", "E", "F", "G", "H", "I", "J",
+            "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T",
+            "U", "V", "W", "X", "Y", "Z"
+        };
+
+        private static readonly string[] ProductPrefixes = new string[]
+        {
+            "CUS",
+            "PCS",
+            "NPE",
+            "NPU",
+            "NPJ",
+            "NPH",
+            "NPS",
+            "BLE",
+            "BLU",
+            "BLJ",
+            "BLH",
+            "BLS",
+            "ULE",
+            "UCE",
+            "ULU",
+            "UCU",
+            "ULJ",
+            "UCJ",
+            "ULH",
+            "UCH",
+            "ULs",
+            "UCs",
+            "SLE",
+            "SCE",
+            "SLU",
+            "SCU",
+            "SLJ",
+            "SCJ",
+            "SLH",
+            "SCH",
+            "SLS",
+            "SCS",
+        }.SelectMany(x => Letters.Select(ch => x + ch)).ToArray();
 
         static async Task Main(string[] args)
         {
@@ -30,7 +74,10 @@ namespace psncrawler
 
             while (true)
             {
-                await new Crawler(logger, notifier, BasePath, 30).ExploreMultithred("CUSA", 0, 30000, "np");
+                foreach (var prefix in ProductPrefixes)
+                {
+                    await new Crawler(logger, notifier, BasePath, 10).ExploreMultithred(prefix, 0, 99999, "np");
+                }
                 await Task.Delay(delay);
             }
         }
@@ -59,6 +106,8 @@ namespace psncrawler
             //        Console.Write("Twitter pin: ");
             //        return Console.ReadLine();
             //    });
+
+            return new DummyCrawlerNotifier();
 
             var notifier = await TwitterCrawlerNotifier.FromAccess(
                 configuration.TwitterApiKey,
@@ -90,7 +139,7 @@ namespace psncrawler
 
     internal class DummyCrawlerNotifier : ICrawlerNotifier
     {
-        public Task NotifyNewGameAsync(Tmdb database) => Task.CompletedTask;
+        public Task NotifyNewGameAsync(Tmdb2 database) => Task.CompletedTask;
 
         public Task NotifyUpdateAsync(TitlePatch patch) => Task.CompletedTask;
     }
