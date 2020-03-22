@@ -10,8 +10,8 @@ namespace psncrawler
 {
     class Program
     {
-        private const string BasePath = "D:\\psndb";
-        private const string LogFile = "log";
+        private const string BasePath = "/data/psndb/psndb";
+        private const string LogFile = "/data/psndb/log";
         private static readonly TimeSpan delay = TimeSpan.FromHours(4);
 
         private static readonly string[] Letters = new string[]
@@ -92,7 +92,7 @@ namespace psncrawler
             new Logger(new List<ILoggerHandler>()
             {
                 new ConcurrencyLogger(new ActionLogger(LogOnConsole)),
-                new ConcurrencyLogger(new ActionLogger(LogOnFile))
+                //new ConcurrencyLogger(new ActionLogger(LogOnFile))
             });
 
         private static async Task<ICrawlerNotifier> SetupNotifier(
