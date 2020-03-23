@@ -25,15 +25,10 @@ namespace psncrawler.Playstation
             yield return GetTmdbUrlInternal(title, environment);
         }
         
-        public static string GetUpdateUrl(Title title, string environment)
+        public static IEnumerable<string> GetUpdateUrl(Title title, string environment)
         {
-            switch (title.Category)
-            {
-                case TitleCategory.PS4: return GetUpdateUrlInternal(title, environment);
-                case TitleCategory.PSVita: return GetVitaUpdateUrlInternal(title, environment);
-                default: 
-                    throw new NotImplementedException();
-            }
+            yield return GetUpdateUrlInternal(title, environment);
+            yield return GetVitaUpdateUrlInternal(title, environment);
         }
 
         public static async Task<string> GetTmdb(Title title, string environment) =>
