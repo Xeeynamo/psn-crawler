@@ -167,7 +167,7 @@ namespace psncrawler
 
         private bool AlreadyFound(Title title) => Directory.Exists(GetTitlePath(title));
 
-        private bool ShouldRetry(PsnException e) => e.StatusCode != 404;
+        private bool ShouldRetry(PsnException e) => e.StatusCode >= 400 && e.StatusCode != 404;
 
         private string GetTitlePath(Title title) => GetFilePath(title.ToString());
         private string GetFilePath(string fileName) => Path.Combine(_basePath, fileName);
